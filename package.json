@@ -1,0 +1,19 @@
+{
+  "name": "music-rec-app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev:server": "cd server && npx tsx src/index.ts",
+    "dev:client": "cd client && npm run dev",
+    "dev": "npm run db:up && npm run db:migrate && concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "db:up": "docker-compose up -d",
+    "db:migrate": "cd server && npx drizzle-kit migrate",
+    "db:generate": "cd server && npx drizzle-kit generate",
+    "db:renormalize": "curl -X POST http://localhost:3001/api/songs/renormalize",
+    "format": "prettier --write \"client/src/**/*.{ts,tsx,css,html}\" \"server/src/**/*.ts\" \"server/*.{ts,json}\" \"client/*.{ts,json,html}\" \"*.{json,yml,yaml,md}\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "prettier": "^3.5.3"
+  }
+}
