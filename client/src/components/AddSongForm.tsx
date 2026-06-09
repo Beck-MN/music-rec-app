@@ -8,6 +8,7 @@ type Props = {
 };
 
 export function AddSongForm({ onSubmit }: Props) {
+  const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [artist, setArtist] = useState("");
   const [genre, setGenre] = useState("");
@@ -29,6 +30,7 @@ export function AddSongForm({ onSubmit }: Props) {
       setArtist("");
       setGenre("");
       setFeatures(DEFAULT_FEATURES);
+      setOpen(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add song");
     } finally {
@@ -38,12 +40,27 @@ export function AddSongForm({ onSubmit }: Props) {
 
   return (
     <section className="rounded-2xl border border-zinc-800 bg-zinc-950/50 p-6">
-      <h2 className="mb-1 text-lg font-semibold text-zinc-100">Add Song</h2>
-      <p className="mb-4 text-sm text-zinc-500">
-        Define audio features as a 5D vector for similarity search
-      </p>
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        className="flex w-full items-center justify-between gap-3 text-left"
+      >
+        <div>
+          <h2 className="text-lg font-semibold text-zinc-100">Add Song</h2>
+          <p className="mt-1 text-sm text-zinc-500">
+            Manually define a 5D audio feature vector
+          </p>
+        </div>
+        <span
+          className={`text-zinc-500 transition-transform ${open ? "rotate-180" : ""}`}
+          aria-hidden
+        >
+          ▾
+        </span>
+      </button>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      {open && (
+        <form onSubmit={handleSubmit} className="mt-4 space-y-4 border-t border-zinc-800 pt-4">
         <div className="grid gap-3 sm:grid-cols-3">
           <input
             required
@@ -106,7 +123,8 @@ export function AddSongForm({ onSubmit }: Props) {
         >
           {submitting ? "Adding..." : "Add to library"}
         </button>
-      </form>
+        </form>
+      )}
     </section>
   );
 }
