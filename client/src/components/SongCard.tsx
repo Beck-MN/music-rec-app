@@ -30,13 +30,7 @@ export function SongCard({ song, onRecommend, onEdit, onDelete, selected, showSi
           {(song.subgenres?.length > 0 || song.primaryGenre || song.genre) && (
             <div className="mt-2">
               <SubgenreTags
-                subgenres={
-                  song.subgenres?.length
-                    ? song.subgenres
-                    : song.genre
-                      ? [song.genre]
-                      : []
-                }
+                subgenres={song.subgenres?.length ? song.subgenres : song.genre ? [song.genre] : []}
                 primaryGenre={song.primaryGenre || song.genre}
               />
             </div>

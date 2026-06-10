@@ -64,11 +64,7 @@ export function SongLibrary({
 
   return (
     <section className="rounded-2xl border border-zinc-800 bg-zinc-950/50 p-6">
-      <EditSongModal
-        song={editingSong}
-        onClose={() => setEditingSong(null)}
-        onSave={onEdit}
-      />
+      <EditSongModal song={editingSong} onClose={() => setEditingSong(null)} onSave={onEdit} />
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold text-zinc-100">Song Library</h2>

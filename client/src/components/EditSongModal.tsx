@@ -8,7 +8,14 @@ type Props = {
 };
 
 function parseSubgenresInput(value: string): string[] {
-  return [...new Set(value.split(",").map((s) => s.trim()).filter(Boolean))];
+  return [
+    ...new Set(
+      value
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+    ),
+  ];
 }
 
 export function EditSongModal({ song, onClose, onSave }: Props) {
@@ -60,7 +67,9 @@ export function EditSongModal({ song, onClose, onSave }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-lg font-semibold text-zinc-100">Edit song</h2>
-        <p className="mt-1 text-sm text-zinc-500">Update metadata — audio features stay unchanged.</p>
+        <p className="mt-1 text-sm text-zinc-500">
+          Update metadata — audio features stay unchanged.
+        </p>
 
         <form onSubmit={(e) => void handleSubmit(e)} className="mt-4 space-y-4">
           <label className="block text-sm">

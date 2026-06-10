@@ -141,29 +141,29 @@ Use the **Add Song** form to set title, artist, genre, and five audio feature sl
 
 ## Useful scripts
 
-| Command | Description |
-|---|---|
-| `npm run dev` | Start DB, migrate, server, and client |
-| `npm run dev:server` | Start API only |
-| `npm run dev:client` | Start frontend only |
-| `npm run db:up` | Start PostgreSQL container |
-| `npm run db:migrate` | Apply Drizzle migrations |
-| `npm run db:generate` | Generate a new migration after schema changes |
-| `npm run db:renormalize` | Re-normalize all stored embeddings in the DB |
-| `npm run format` | Format source files with Prettier |
+| Command                  | Description                                   |
+| ------------------------ | --------------------------------------------- |
+| `npm run dev`            | Start DB, migrate, server, and client         |
+| `npm run dev:server`     | Start API only                                |
+| `npm run dev:client`     | Start frontend only                           |
+| `npm run db:up`          | Start PostgreSQL container                    |
+| `npm run db:migrate`     | Apply Drizzle migrations                      |
+| `npm run db:generate`    | Generate a new migration after schema changes |
+| `npm run db:renormalize` | Re-normalize all stored embeddings in the DB  |
+| `npm run format`         | Format source files with Prettier             |
 
 ## API endpoints
 
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/api/songs` | List all songs |
-| `POST` | `/api/songs` | Add a song |
-| `POST` | `/api/songs/import` | Bulk import JSON array |
-| `POST` | `/api/songs/delete-all` | Delete all songs |
-| `DELETE` | `/api/songs/:id` | Delete one song |
-| `POST` | `/api/songs/renormalize` | Re-normalize embeddings |
-| `GET` | `/api/recommendations/:id?topK=5` | Similar songs by song ID |
-| `POST` | `/api/recommendations` | Similar songs by feature vector |
+| Method   | Path                              | Description                     |
+| -------- | --------------------------------- | ------------------------------- |
+| `GET`    | `/api/songs`                      | List all songs                  |
+| `POST`   | `/api/songs`                      | Add a song                      |
+| `POST`   | `/api/songs/import`               | Bulk import JSON array          |
+| `POST`   | `/api/songs/delete-all`           | Delete all songs                |
+| `DELETE` | `/api/songs/:id`                  | Delete one song                 |
+| `POST`   | `/api/songs/renormalize`          | Re-normalize embeddings         |
+| `GET`    | `/api/recommendations/:id?topK=5` | Similar songs by song ID        |
+| `POST`   | `/api/recommendations`            | Similar songs by feature vector |
 
 ## Troubleshooting
 
