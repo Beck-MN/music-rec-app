@@ -3,6 +3,10 @@ import type {
   ImportSongPayload,
   ImportSongsResult,
   NewSongPayload,
+  QdrantSong,
+  QdrantSongWithSimilarity,
+  QdrantStatus,
+  QdrantSyncResult,
   Song,
   SongWithSimilarity,
   UpdateSongPayload,
@@ -80,6 +84,26 @@ export const api = {
     bySongId: (id: number, topK: number = 5): Promise<SongWithSimilarity[]> =>
       fetch(`${BASE}/recommendations/${id}?topK=${topK}`).then((r) =>
         handleResponse<SongWithSimilarity[]>(r)
+      ),
+  },
+
+  qdrant: {
+    status: (): Promise<QdrantStatus> =>
+      fetch(`${BASE}/qdrant/status`).then((r) => handleResponse<QdrantStatus>(r)),
+
+    sync: (): Promise<QdrantSyncResult> =>
+      fetch(`${BASE}/qdrant/sync`, { method: "POST" }).then((r) =>
+        handleResponse<QdrantSyncResult>(r)
+      ),
+
+    search: (q: string, limit = 10): Promise<QdrantSong[]> =>
+      fetch(`${BASE}/qdrant/search?q=${encodeURIComponent(q)}&limit=${limit}`).then((r) =>
+        handleResponse<QdrantSong[]>(r)
+      ),
+
+    similarByPointId: (id: string, topK = 5): Promise<QdrantSongWithSimilarity[]> =>
+      fetch(`${BASE}/qdrant/similar/${encodeURIComponent(id)}?topK=${topK}`).then((r) =>
+        handleResponse<QdrantSongWithSimilarity[]>(r)
       ),
   },
 };

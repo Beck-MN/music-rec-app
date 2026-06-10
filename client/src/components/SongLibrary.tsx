@@ -120,7 +120,7 @@ export function SongLibrary({
             key={song.id}
             song={song}
             selected={selectedId === song.id}
-            onRecommend={onSelect}
+            onRecommend={(song) => onSelect(song as Song)}
             onEdit={setEditingSong}
             onDelete={onDelete}
           />

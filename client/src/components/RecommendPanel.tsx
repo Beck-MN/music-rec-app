@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Song, SongWithSimilarity } from "../types/song";
+import { readSongIdFromDrag, SONG_DRAG_MIME } from "../lib/drag";
 import { SongCard } from "./SongCard";
 import { SubgenreTags } from "./SubgenreTags";
 import { VectorVisualizer } from "./VectorVisualizer";
@@ -8,15 +9,23 @@ type SortOrder = "desc" | "asc";
 
 type Props = {
   selectedSong: Song | null;
+  songs: Song[];
+  onSelectSong: (song: Song) => void;
   onFetchRecommendations: (id: number, topK: number) => Promise<SongWithSimilarity[]>;
 };
 
-export function RecommendPanel({ selectedSong, onFetchRecommendations }: Props) {
+export function RecommendPanel({
+  selectedSong,
+  songs,
+  onSelectSong,
+  onFetchRecommendations,
+}: Props) {
   const [recommendations, setRecommendations] = useState<SongWithSimilarity[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [topK, setTopK] = useState(5);
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+  const [dragOver, setDragOver] = useState(false);
 
   useEffect(() => {
     if (!selectedSong) {
@@ -40,8 +49,36 @@ export function RecommendPanel({ selectedSong, onFetchRecommendations }: Props) 
     );
   }, [recommendations, sortOrder]);
 
+  const handleDragOver = (e: React.DragEvent) => {
+    if (!e.dataTransfer.types.includes(SONG_DRAG_MIME)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+    setDragOver(true);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const id = readSongIdFromDrag(e.dataTransfer);
+    if (id === null) return;
+    const song = songs.find((s) => s.id === id);
+    if (song) onSelectSong(song);
+  };
+
   return (
-    <section className="rounded-2xl border border-zinc-800 bg-zinc-950/50 p-6">
+    <section
+      className={`rounded-2xl border bg-zinc-950/50 p-6 transition-colors ${
+        dragOver ? "border-violet-400 bg-violet-500/5" : "border-zinc-800"
+      }`}
+      onDragOver={handleDragOver}
+      onDragEnter={handleDragOver}
+      onDragLeave={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+          setDragOver(false);
+        }
+      }}
+      onDrop={handleDrop}
+    >
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-zinc-100">Recommendations</h2>
@@ -77,8 +114,14 @@ export function RecommendPanel({ selectedSong, onFetchRecommendations }: Props) 
       </div>
 
       {!selectedSong && (
-        <div className="rounded-xl border border-dashed border-zinc-800 p-8 text-center">
-          <p className="text-zinc-400">Select a song to find similar tracks</p>
+        <div
+          className={`rounded-xl border border-dashed p-8 text-center transition-colors ${
+            dragOver ? "border-violet-400 bg-violet-500/10" : "border-zinc-800"
+          }`}
+        >
+          <p className="text-zinc-400">
+            {dragOver ? "Drop to find similar tracks" : "Drag a song here or click Find similar"}
+          </p>
         </div>
       )}
 

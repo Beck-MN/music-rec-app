@@ -57,6 +57,27 @@ export type ImportSongsResult = {
   songs: Song[];
 };
 
+export type QdrantSong = Omit<Song, "id"> & {
+  id: string;
+};
+
+export type QdrantSongWithSimilarity = QdrantSong & {
+  similarity: number;
+};
+
+export type QdrantStatus = {
+  connected: boolean;
+  collection: string;
+  exists: boolean;
+  pointsCount: number;
+  vectorSize?: number;
+  error?: string;
+};
+
+export type QdrantSyncResult = {
+  synced: number;
+};
+
 export const FEATURE_LABELS: Record<keyof AudioFeatures, string> = {
   tempo: "Tempo",
   energy: "Energy",
