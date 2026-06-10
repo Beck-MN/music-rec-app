@@ -4,7 +4,7 @@ import { ImportJsonForm } from "./components/ImportJsonForm";
 import { RecommendPanel } from "./components/RecommendPanel";
 import { SongLibrary } from "./components/SongLibrary";
 import { useSongs } from "./hooks/useSongs";
-import type { Song } from "./types/song";
+import type { Song, UpdateSongPayload } from "./types/song";
 
 export default function App() {
   const {
@@ -13,6 +13,7 @@ export default function App() {
     error,
     addSong,
     deleteSong,
+    updateSong,
     deleteAllSongs,
     importSongs,
     getRecommendations,
@@ -24,6 +25,12 @@ export default function App() {
   const handleDelete = async (id: number) => {
     await deleteSong(id);
     if (selectedSong?.id === id) setSelectedSong(null);
+  };
+
+  const handleEdit = async (id: number, payload: UpdateSongPayload) => {
+    const updated = await updateSong(id, payload);
+    if (selectedSong?.id === id) setSelectedSong(updated);
+    return updated;
   };
 
   const handleDeleteAll = async () => {
@@ -62,6 +69,7 @@ export default function App() {
               error={error}
               selectedId={selectedSong?.id ?? null}
               onSelect={handleSelect}
+              onEdit={handleEdit}
               onDelete={handleDelete}
               onDeleteAll={handleDeleteAll}
             />

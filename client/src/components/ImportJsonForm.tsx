@@ -10,6 +10,8 @@ const EXAMPLE = `[
     "title": "Blinding Lights",
     "artist": "The Weeknd",
     "genre": "Pop",
+    "primary_genre": "Pop",
+    "subgenres": ["Alternative R&B", "Dance-pop", "Pop", "R&B"],
     "features": {
       "tempo": 0.1867,
       "energy": 1.0,
@@ -46,7 +48,8 @@ function validateImportPayload(data: unknown): ImportSongPayload[] {
       throw new Error(`Row ${index + 1}: expected an object`);
     }
 
-    const { title, artist, genre, features } = item as Record<string, unknown>;
+    const { title, artist, genre, primary_genre, primaryGenre, subgenres, features } =
+      item as Record<string, unknown>;
 
     if (typeof title !== "string" || !title.trim()) {
       throw new Error(`Row ${index + 1}: title is required`);
@@ -56,6 +59,15 @@ function validateImportPayload(data: unknown): ImportSongPayload[] {
     }
     if (genre !== undefined && typeof genre !== "string") {
       throw new Error(`Row ${index + 1}: genre must be a string`);
+    }
+    if (primary_genre !== undefined && typeof primary_genre !== "string") {
+      throw new Error(`Row ${index + 1}: primary_genre must be a string`);
+    }
+    if (primaryGenre !== undefined && typeof primaryGenre !== "string") {
+      throw new Error(`Row ${index + 1}: primaryGenre must be a string`);
+    }
+    if (subgenres !== undefined && !Array.isArray(subgenres)) {
+      throw new Error(`Row ${index + 1}: subgenres must be an array`);
     }
     if (!features || typeof features !== "object") {
       throw new Error(`Row ${index + 1}: features object is required`);
@@ -71,10 +83,30 @@ function validateImportPayload(data: unknown): ImportSongPayload[] {
       ...(typeof featureObj.bpm_raw === "number" ? { bpm_raw: featureObj.bpm_raw } : {}),
     };
 
+    const resolvedPrimary =
+      typeof primary_genre === "string"
+        ? primary_genre.trim()
+        : typeof primaryGenre === "string"
+          ? primaryGenre.trim()
+          : typeof genre === "string"
+            ? genre.trim()
+            : undefined;
+
+    const parsedSubgenres = Array.isArray(subgenres)
+      ? subgenres.map((tag, i) => {
+          if (typeof tag !== "string" || !tag.trim()) {
+            throw new Error(`Row ${index + 1}: subgenres[${i}] must be a non-empty string`);
+          }
+          return tag.trim();
+        })
+      : [];
+
     return {
       title: title.trim(),
       artist: artist.trim(),
-      genre: typeof genre === "string" ? genre.trim() : undefined,
+      genre: resolvedPrimary ?? (typeof genre === "string" ? genre.trim() : undefined),
+      primaryGenre: resolvedPrimary,
+      subgenres: parsedSubgenres,
       features: normalizedFeatures,
     };
   });
@@ -132,9 +164,9 @@ export function ImportJsonForm({ onImport }: Props) {
     <section className="rounded-2xl border border-zinc-800 bg-zinc-950/50 p-6">
       <h2 className="mb-1 text-lg font-semibold text-zinc-100">Import JSON</h2>
       <p className="mb-4 text-sm text-zinc-500">
-        Upload a JSON array of songs. Features are min-max normalized across the batch on import so
-        vectors spread evenly. Extra fields like <code className="text-zinc-400">bpm_raw</code> are
-        ignored for search.
+        Upload a JSON array of songs. Features are min-max normalized across the batch on import.
+        Supports <code className="text-zinc-400">subgenres</code> and{" "}
+        <code className="text-zinc-400">primary_genre</code>.
       </p>
 
       <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-zinc-700 bg-zinc-900/40 px-4 py-8 transition hover:border-violet-500/50 hover:bg-zinc-900/70">
@@ -152,7 +184,7 @@ export function ImportJsonForm({ onImport }: Props) {
           {fileName ? fileName : "Choose a .json file or drop it here"}
         </p>
         <p className="mt-1 text-xs text-zinc-600">
-          Array of songs with title, artist, genre, features
+          Array of songs with title, artist, genre, subgenres, features
         </p>
       </label>
 

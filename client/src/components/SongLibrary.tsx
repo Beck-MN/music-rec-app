@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import type { Song } from "../types/song";
+import type { Song, UpdateSongPayload } from "../types/song";
+import { EditSongModal } from "./EditSongModal";
 import { SongCard } from "./SongCard";
 
 type Props = {
@@ -8,6 +9,7 @@ type Props = {
   error: string | null;
   selectedId: number | null;
   onSelect: (song: Song) => void;
+  onEdit: (id: number, payload: UpdateSongPayload) => Promise<Song>;
   onDelete: (id: number) => void;
   onDeleteAll: () => Promise<void>;
 };
@@ -17,7 +19,9 @@ function matchesSearch(song: Song, query: string) {
   return (
     song.title.toLowerCase().includes(q) ||
     song.artist.toLowerCase().includes(q) ||
-    song.genre?.toLowerCase().includes(q)
+    song.genre?.toLowerCase().includes(q) ||
+    song.primaryGenre?.toLowerCase().includes(q) ||
+    song.subgenres?.some((tag) => tag.toLowerCase().includes(q))
   );
 }
 
@@ -27,12 +31,14 @@ export function SongLibrary({
   error,
   selectedId,
   onSelect,
+  onEdit,
   onDelete,
   onDeleteAll,
 }: Props) {
   const [search, setSearch] = useState("");
   const [deleteAllError, setDeleteAllError] = useState<string | null>(null);
   const [deletingAll, setDeletingAll] = useState(false);
+  const [editingSong, setEditingSong] = useState<Song | null>(null);
 
   const handleDeleteAll = async () => {
     if (!window.confirm(`Delete all ${songs.length} songs? This cannot be undone.`)) {
@@ -58,6 +64,11 @@ export function SongLibrary({
 
   return (
     <section className="rounded-2xl border border-zinc-800 bg-zinc-950/50 p-6">
+      <EditSongModal
+        song={editingSong}
+        onClose={() => setEditingSong(null)}
+        onSave={onEdit}
+      />
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold text-zinc-100">Song Library</h2>
@@ -83,7 +94,7 @@ export function SongLibrary({
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by title, artist, or genre..."
+          placeholder="Search by title, artist, genre, or subgenre..."
           className="mb-4 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-violet-500 focus:outline-none"
         />
       )}
@@ -114,6 +125,7 @@ export function SongLibrary({
             song={song}
             selected={selectedId === song.id}
             onRecommend={onSelect}
+            onEdit={setEditingSong}
             onDelete={onDelete}
           />
         ))}

@@ -5,6 +5,7 @@ import type {
   NewSongPayload,
   Song,
   SongWithSimilarity,
+  UpdateSongPayload,
 } from "../types/song";
 
 const BASE = "http://localhost:3001/api";
@@ -43,6 +44,13 @@ export const api = {
       fetch(`${BASE}/songs/${id}`, { method: "DELETE" }).then((r) => {
         if (!r.ok) throw new Error(r.statusText);
       }),
+
+    update: (id: number, payload: UpdateSongPayload): Promise<Song> =>
+      fetch(`${BASE}/songs/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).then((r) => handleResponse<Song>(r)),
 
     deleteAll: (): Promise<void> =>
       fetch(`${BASE}/songs/delete-all`, { method: "POST" }).then((r) =>

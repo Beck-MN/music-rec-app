@@ -15,6 +15,8 @@ export type Song = {
   title: string;
   artist: string;
   genre: string;
+  primaryGenre: string;
+  subgenres: string[];
   embedding: number[];
   createdAt: string;
 };
@@ -27,6 +29,8 @@ export type NewSongPayload = {
   title: string;
   artist: string;
   genre: string;
+  primaryGenre?: string;
+  subgenres?: string[];
   features: AudioFeatures;
 };
 
@@ -34,7 +38,18 @@ export type ImportSongPayload = {
   title: string;
   artist: string;
   genre?: string;
+  primaryGenre?: string;
+  primary_genre?: string;
+  subgenres?: string[];
   features: RawAudioFeatures;
+};
+
+export type UpdateSongPayload = {
+  title: string;
+  artist: string;
+  genre?: string;
+  primaryGenre?: string;
+  subgenres?: string[];
 };
 
 export type ImportSongsResult = {

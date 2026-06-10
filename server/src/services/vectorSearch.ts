@@ -18,6 +18,8 @@ export type ImportSongPayload = {
   title: string;
   artist: string;
   genre?: string;
+  primaryGenre?: string;
+  subgenres?: string[];
   features: RawAudioFeatures;
 };
 
@@ -78,6 +80,19 @@ export function minMaxNormalizeVectors(vectors: number[][]): number[][] {
   );
 }
 
+export function parseSubgenres(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map(String);
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      return Array.isArray(parsed) ? parsed.map(String) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 export function parseEmbedding(embedding: unknown): number[] {
   if (Array.isArray(embedding)) return embedding.map(Number);
   if (typeof embedding === "string") {
@@ -98,7 +113,8 @@ export async function findSimilarSongs(
 
   const results = await db.execute(sql`
     SELECT
-      id, title, artist, genre, embedding::text AS embedding,
+      id, title, artist, genre, primary_genre, subgenres, created_at,
+      embedding::text AS embedding,
       1 - (embedding <=> ${vectorLiteral}::vector) AS similarity
     FROM songs
     ${excludeId ? sql`WHERE id != ${excludeId}` : sql``}
@@ -107,10 +123,25 @@ export async function findSimilarSongs(
   `);
 
   return results.rows.map((row) => ({
-    ...row,
     id: Number(row.id),
+    title: String(row.title),
+    artist: String(row.artist),
+    genre:
+      row.genre != null
+        ? String(row.genre)
+        : row.primary_genre != null
+          ? String(row.primary_genre)
+          : "",
+    primaryGenre:
+      row.primary_genre != null
+        ? String(row.primary_genre)
+        : row.genre != null
+          ? String(row.genre)
+          : "",
+    subgenres: parseSubgenres(row.subgenres),
     similarity: Number(row.similarity),
     embedding: parseEmbedding(row.embedding),
+    createdAt: row.created_at != null ? String(row.created_at) : "",
   }));
 }
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../lib/api";
-import type { ImportSongPayload, NewSongPayload, Song, SongWithSimilarity } from "../types/song";
+import type { ImportSongPayload, NewSongPayload, Song, SongWithSimilarity, UpdateSongPayload } from "../types/song";
 
 export function useSongs() {
   const [songs, setSongs] = useState<Song[]>([]);
@@ -35,6 +35,12 @@ export function useSongs() {
     setSongs((prev) => prev.filter((s) => s.id !== id));
   };
 
+  const updateSong = async (id: number, payload: UpdateSongPayload) => {
+    const updated = await api.songs.update(id, payload);
+    setSongs((prev) => prev.map((s) => (s.id === id ? updated : s)));
+    return updated;
+  };
+
   const deleteAllSongs = async () => {
     await api.songs.deleteAll();
     setSongs([]);
@@ -57,6 +63,7 @@ export function useSongs() {
     refresh,
     addSong,
     deleteSong,
+    updateSong,
     deleteAllSongs,
     importSongs,
     getRecommendations,

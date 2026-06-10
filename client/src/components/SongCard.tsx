@@ -1,15 +1,18 @@
 import type { Song, SongWithSimilarity } from "../types/song";
+import { EditMenuButton } from "./EditSongModal";
+import { SubgenreTags } from "./SubgenreTags";
 import { VectorVisualizer } from "./VectorVisualizer";
 
 type Props = {
   song: Song | SongWithSimilarity;
   onRecommend?: (song: Song) => void;
+  onEdit?: (song: Song) => void;
   onDelete?: (id: number) => void;
   selected?: boolean;
   showSimilarity?: boolean;
 };
 
-export function SongCard({ song, onRecommend, onDelete, selected, showSimilarity }: Props) {
+export function SongCard({ song, onRecommend, onEdit, onDelete, selected, showSimilarity }: Props) {
   const similarity = "similarity" in song ? song.similarity : undefined;
 
   return (
@@ -21,21 +24,33 @@ export function SongCard({ song, onRecommend, onDelete, selected, showSimilarity
       }`}
     >
       <div className="flex items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0 flex-1">
           <h3 className="font-semibold text-zinc-100">{song.title}</h3>
           <p className="text-sm text-zinc-400">{song.artist}</p>
-          {song.genre && (
-            <span className="mt-2 inline-block rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-300">
-              {song.genre}
-            </span>
+          {(song.subgenres?.length > 0 || song.primaryGenre || song.genre) && (
+            <div className="mt-2">
+              <SubgenreTags
+                subgenres={
+                  song.subgenres?.length
+                    ? song.subgenres
+                    : song.genre
+                      ? [song.genre]
+                      : []
+                }
+                primaryGenre={song.primaryGenre || song.genre}
+              />
+            </div>
           )}
         </div>
-        {showSimilarity && similarity !== undefined && (
-          <div className="text-right">
-            <p className="text-xs uppercase tracking-wide text-zinc-500">Match</p>
-            <p className="text-lg font-bold text-emerald-400">{(similarity * 100).toFixed(0)}%</p>
-          </div>
-        )}
+        <div className="flex shrink-0 items-start gap-2">
+          {onEdit && <EditMenuButton onClick={() => onEdit(song)} />}
+          {showSimilarity && similarity !== undefined && (
+            <div className="text-right">
+              <p className="text-xs uppercase tracking-wide text-zinc-500">Match</p>
+              <p className="text-lg font-bold text-emerald-400">{(similarity * 100).toFixed(0)}%</p>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="mt-3">

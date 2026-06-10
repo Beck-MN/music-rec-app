@@ -8,6 +8,7 @@ import {
   minMaxNormalizeVectors,
   normalizeFeatures,
   parseEmbedding,
+  parseSubgenres,
 } from "../services/vectorSearch";
 import { asc, eq } from "drizzle-orm";
 
@@ -15,9 +16,28 @@ const router = Router();
 
 function formatSong(song: typeof songs.$inferSelect) {
   return {
-    ...song,
+    id: song.id,
+    title: song.title,
+    artist: song.artist,
+    genre: song.genre ?? song.primaryGenre ?? "",
+    primaryGenre: song.primaryGenre ?? song.genre ?? "",
+    subgenres: parseSubgenres(song.subgenres),
     embedding: parseEmbedding(song.embedding),
+    createdAt: song.createdAt != null ? String(song.createdAt) : "",
   };
+}
+
+function parseSubgenresField(value: unknown, index: number): string[] | undefined {
+  if (value === undefined) return undefined;
+  if (!Array.isArray(value)) {
+    throw new Error(`Item ${index}: subgenres must be an array of strings`);
+  }
+  return value.map((item, i) => {
+    if (typeof item !== "string" || !item.trim()) {
+      throw new Error(`Item ${index}: subgenres[${i}] must be a non-empty string`);
+    }
+    return item.trim();
+  });
 }
 
 function parseImportPayload(body: unknown): ImportSongPayload[] {
@@ -30,7 +50,8 @@ function parseImportPayload(body: unknown): ImportSongPayload[] {
       throw new Error(`Item ${index}: expected an object`);
     }
 
-    const { title, artist, genre, features } = item as Record<string, unknown>;
+    const { title, artist, genre, primary_genre, primaryGenre, subgenres, features } =
+      item as Record<string, unknown>;
 
     if (typeof title !== "string" || !title.trim()) {
       throw new Error(`Item ${index}: title is required`);
@@ -41,28 +62,52 @@ function parseImportPayload(body: unknown): ImportSongPayload[] {
     if (genre !== undefined && typeof genre !== "string") {
       throw new Error(`Item ${index}: genre must be a string`);
     }
+    const resolvedPrimary =
+      typeof primary_genre === "string"
+        ? primary_genre.trim()
+        : typeof primaryGenre === "string"
+          ? primaryGenre.trim()
+          : typeof genre === "string"
+            ? genre.trim()
+            : undefined;
+
+    if (primary_genre !== undefined && typeof primary_genre !== "string") {
+      throw new Error(`Item ${index}: primary_genre must be a string`);
+    }
+    if (primaryGenre !== undefined && typeof primaryGenre !== "string") {
+      throw new Error(`Item ${index}: primaryGenre must be a string`);
+    }
+    if (subgenres !== undefined && !Array.isArray(subgenres)) {
+      throw new Error(`Item ${index}: subgenres must be an array`);
+    }
     if (!features || typeof features !== "object") {
       throw new Error(`Item ${index}: features object is required`);
     }
 
     normalizeFeatures(features as ImportSongPayload["features"]);
+    const parsedSubgenres = parseSubgenresField(subgenres, index) ?? [];
 
     return {
       title: title.trim(),
       artist: artist.trim(),
-      genre: typeof genre === "string" ? genre.trim() : undefined,
+      genre: resolvedPrimary ?? (typeof genre === "string" ? genre.trim() : undefined),
+      primaryGenre: resolvedPrimary,
+      subgenres: parsedSubgenres,
       features: features as ImportSongPayload["features"],
     };
   });
 }
 
 async function insertSong(entry: ImportSongPayload) {
+  const primaryGenre = entry.primaryGenre ?? entry.genre;
   const [song] = await db
     .insert(songs)
     .values({
       title: entry.title,
       artist: entry.artist,
-      genre: entry.genre,
+      genre: primaryGenre,
+      primaryGenre,
+      subgenres: entry.subgenres ?? [],
       embedding: featuresToVector(entry.features),
     } as NewSong)
     .returning();
@@ -77,11 +122,13 @@ router.get("/", async (_req, res) => {
 
 router.post("/", async (req, res) => {
   try {
-    const { title, artist, genre, features } = req.body;
+    const { title, artist, genre, primaryGenre, subgenres, features } = req.body;
     const song = await insertSong({
       title,
       artist,
       genre,
+      primaryGenre,
+      subgenres,
       features,
     });
     res.status(201).json(song);
@@ -135,6 +182,75 @@ router.post("/renormalize", async (_req, res) => {
 router.post("/delete-all", async (_req, res) => {
   await db.delete(songs);
   res.json({ deleted: true });
+});
+
+router.patch("/:id", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { title, artist, genre, primaryGenre, subgenres } = req.body as Record<string, unknown>;
+
+    if (typeof title !== "string" || !title.trim()) {
+      res.status(400).json({ error: "title is required" });
+      return;
+    }
+    if (typeof artist !== "string" || !artist.trim()) {
+      res.status(400).json({ error: "artist is required" });
+      return;
+    }
+    if (genre !== undefined && typeof genre !== "string") {
+      res.status(400).json({ error: "genre must be a string" });
+      return;
+    }
+    if (primaryGenre !== undefined && typeof primaryGenre !== "string") {
+      res.status(400).json({ error: "primaryGenre must be a string" });
+      return;
+    }
+    if (subgenres !== undefined && !Array.isArray(subgenres)) {
+      res.status(400).json({ error: "subgenres must be an array" });
+      return;
+    }
+
+    const resolvedPrimary =
+      typeof primaryGenre === "string"
+        ? primaryGenre.trim()
+        : typeof genre === "string"
+          ? genre.trim()
+          : undefined;
+
+    const parsedSubgenres =
+      subgenres === undefined
+        ? undefined
+        : subgenres.map((item, i) => {
+            if (typeof item !== "string" || !item.trim()) {
+              throw new Error(`subgenres[${i}] must be a non-empty string`);
+            }
+            return item.trim();
+          });
+
+    const [existing] = await db.select().from(songs).where(eq(songs.id, id)).limit(1);
+    if (!existing) {
+      res.status(404).json({ error: "Song not found" });
+      return;
+    }
+
+    const [song] = await db
+      .update(songs)
+      .set({
+        title: title.trim(),
+        artist: artist.trim(),
+        genre: resolvedPrimary ?? existing.genre,
+        primaryGenre: resolvedPrimary ?? existing.primaryGenre,
+        subgenres: parsedSubgenres ?? existing.subgenres,
+      })
+      .where(eq(songs.id, id))
+      .returning();
+
+    res.json(formatSong(song));
+  } catch (err) {
+    res.status(400).json({
+      error: err instanceof Error ? err.message : "Invalid update payload",
+    });
+  }
 });
 
 router.delete("/:id", async (req, res) => {

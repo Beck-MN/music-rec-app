@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Song, SongWithSimilarity } from "../types/song";
 import { SongCard } from "./SongCard";
+import { SubgenreTags } from "./SubgenreTags";
 import { VectorVisualizer } from "./VectorVisualizer";
 
 type SortOrder = "desc" | "asc";
@@ -87,6 +88,14 @@ export function RecommendPanel({ selectedSong, onFetchRecommendations }: Props) 
           <p className="mt-1 font-medium text-zinc-100">
             {selectedSong.title} — {selectedSong.artist}
           </p>
+          {(selectedSong.subgenres?.length > 0 || selectedSong.primaryGenre) && (
+            <div className="mt-2">
+              <SubgenreTags
+                subgenres={selectedSong.subgenres}
+                primaryGenre={selectedSong.primaryGenre || selectedSong.genre}
+              />
+            </div>
+          )}
           <div className="mt-3">
             <VectorVisualizer vector={selectedSong.embedding} />
           </div>
